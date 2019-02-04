@@ -1,0 +1,125 @@
+1)Test #1
+
+"select * fom emp"
+yyerror : syntax error
+
+
+2) Test #2
+"select * from emp"
+
+------------------- Statement Parse Tree -------------------
+SELECT stmt -->	<select column list> => *  .	<table> => emp	<filter> => (empty)	<group by> => (empty)	<order by> => (empty)	
+
+yyerror : bad table name
+
+3) Test #3
+"select * from saleshistory" 
+
+------------------- Statement Parse Tree -------------------
+SELECT stmt -->	<select column list> => *  .	<table> => saleshistory	<filter> => (empty)	<group by> => (empty)	<order by> => (empty)	
+
+-------------------Basic Query Plan------------------
+Project columns
+	Read table saleshistory
+
+--------------Final Query Execution Plan-------------
+
+table scan full saleshistory
+
+4) Test #4
+"select * from saleshistory order by cust_id"
+
+------------------- Statement Parse Tree -------------------
+SELECT stmt -->	<select column list> => *  .	<table> => saleshistory	<filter> => (empty)	<group by> => (empty)	<order by> => column = cust_id	
+
+-------------------Basic Query Plan------------------
+Ordering
+	Project columns
+		Read table saleshistory
+
+--------------Final Query Execution Plan-------------
+
+sort order by
+	table scan full saleshistory
+
+5) Test #5
+"select cust_id, count(*) from saleshistory group by cust_id order by 2"
+
+------------------- Statement Parse Tree -------------------
+SELECT stmt -->	<select column list> => cust_id  .	<table> => saleshistory	<filter> => (empty)	<group by> => column = cust_id,aggregate function = count, column = *	<order by> => column = 2	
+
+-------------------Basic Query Plan------------------
+Ordering
+	Project columns
+		Grouping
+			Read table saleshistory
+
+--------------Final Query Execution Plan-------------
+
+sort order by
+	hash group by
+		table scan full saleshistory
+
+6) Test #6
+"select cust_id, count(*) from saleshistory group by cust_id order by cust_id"
+
+------------------- Statement Parse Tree -------------------
+SELECT stmt -->	<select column list> => cust_id  .	<table> => saleshistory	<filter> => (empty)	<group by> => column = cust_id,aggregate function = count, column = *	<order by> => column = cust_id	
+
+-------------------Basic Query Plan------------------
+Ordering
+	Project columns
+		Grouping
+			Read table saleshistory
+
+--------------Final Query Execution Plan-------------
+
+sort group by
+	table scan full saleshistory
+
+7) Test #7
+"select * from saleshistory where cust_id = 9782323232"
+
+------------------- Statement Parse Tree -------------------
+SELECT stmt -->	<select column list> => *  .	<table> => saleshistory	<filter> => cust_id 269(op) 1192388640	<group by> => (empty)	<order by> => (empty)	
+
+-------------------Basic Query Plan------------------
+Project columns
+	Apply select filter
+		Read table saleshistory
+
+--------------Final Query Execution Plan-------------
+
+table fetch saleshistory
+	index fetch saleshistory$customers
+
+8) Test #8
+"select * from saleshistory where cust_id != 9782323232"
+
+------------------- Statement Parse Tree -------------------
+SELECT stmt -->	<select column list> => *  .	<table> => saleshistory	<filter> => cust_id 274(op) 1192388640	<group by> => (empty)	<order by> => (empty)	
+
+-------------------Basic Query Plan------------------
+Project columns
+	Apply select filter
+		Read table saleshistory
+
+--------------Final Query Execution Plan-------------
+
+table scan full saleshistory
+
+9) Test #9
+ "select zipcode, count(*) from customers group by zipcode"
+
+------------------- Statement Parse Tree -------------------
+SELECT stmt -->	<select column list> => zipcode  .	<table> => customers	<filter> => (empty)	<group by> => column = zipcode,aggregate function = count, column = *	<order by> => (empty)	
+
+-------------------Basic Query Plan------------------
+Project columns
+	Grouping
+		Read table customers
+
+--------------Final Query Execution Plan-------------
+
+hash group by
+	table scan full customers
